@@ -1,0 +1,14 @@
+# 예전 빌드 (배포에 포함하지 않음)
+_old/
+
+# OS / 편집기
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 혹시 나중에 도구를 붙일 경우
+node_modules/
+dist/
+.vercel
