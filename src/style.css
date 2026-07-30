@@ -1,0 +1,178 @@
+/* ── 테마 ──
+   기본은 다크. data-theme="light" 를 <html> 에 붙이면 종이 테마.
+   악보 SVG 는 전부 currentColor 로 그리고 .ms svg{color:var(--ink)} 로 색을 받는다. */
+:root{
+  color-scheme:dark;
+  --bg:#12141a; --paper:#1b1f27; --ink:#e9e7e1; --btn:#242a35; --line:#333a47;
+  --dim:#8e97a8; --accent:#4f8ef7; --accent-w:#1d2b47; --warm:#ff9b4d; --spec:#3ecf8e;
+  --bar:rgba(18,20,26,.94); --shadow:rgba(0,0,0,.4);
+  --onfill:#14171e;          /* 주황/초록 채움 위의 글자색 */
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f7f5f0; --paper:#fffdf8; --ink:#1a1a1a; --btn:#ffffff; --line:#dcd6c8;
+  --dim:#8b8578; --accent:#2f6bff; --accent-w:#e8efff; --warm:#f07d22; --spec:#1f9d68;
+  --bar:rgba(247,245,240,.95); --shadow:rgba(0,0,0,.12);
+  --onfill:#ffffff;
+}
+.ms svg{color:var(--ink)}
+.ms svg .hl{color:var(--accent)}
+.pat svg, .key svg{color:var(--ink)}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:var(--bg); color:var(--ink); overscroll-behavior-y:contain;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+body{padding-bottom:var(--padbot,340px)}
+button{font-family:inherit}
+
+/* ── 상단 ── */
+header{position:sticky; top:0; z-index:40; background:var(--bar);
+  backdrop-filter:blur(12px); border-bottom:1px solid var(--line)}
+.hrow{display:flex; align-items:center; gap:8px; padding:8px 12px}
+#title{flex:1; min-width:0; background:transparent; border:none; color:var(--ink);
+  font-size:16px; font-weight:700; padding:6px 2px}
+#title:focus{outline:none; border-bottom:1.5px solid var(--accent)}
+.btn{background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:10px;
+  min-height:42px; padding:0 14px; font-size:13px; font-weight:600; white-space:nowrap;
+  display:inline-flex; align-items:center; justify-content:center; gap:5px}
+.btn:active{transform:scale(.96)}
+.btn:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.btn.p{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.on{background:var(--warm); border-color:var(--warm); color:var(--onfill)}
+.btn.sm{min-height:38px; padding:0 12px; font-size:12px}
+.btn.ic{min-width:44px; padding:0 8px; font-size:15px}
+.btn[disabled]{opacity:.3}
+.bpm{display:flex; align-items:center; border:1px solid var(--line); border-radius:10px;
+  overflow:hidden; background:var(--btn)}
+.bpm button{border:none; background:transparent; min-width:38px; min-height:42px;
+  padding:0; font-size:17px; font-weight:600; color:var(--ink)}
+.bpm input{width:44px; background:transparent; border:none; text-align:center;
+  font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink)}
+.bpm input:focus{outline:none}
+
+/* ── 악보 ── */
+main{padding:14px 12px 4px}
+.section{margin-bottom:22px}
+.slab{display:flex; align-items:center; gap:8px; padding:0 2px 7px}
+.slab .n{font-size:11px; font-weight:800; color:var(--dim); letter-spacing:.05em}
+.slab .nm{font-size:12.5px; font-weight:800; color:var(--ink)}
+.slab .rp{font-size:11px; font-weight:800; color:var(--warm)}
+.slab .sp{flex:1}
+.sysgrid{display:grid; grid-template-columns:1fr; gap:9px}
+@media(min-width:620px){ .sysgrid{grid-template-columns:1fr 1fr} }
+@media(min-width:980px){ .sysgrid{grid-template-columns:1fr 1fr 1fr 1fr} }
+.ms{background:var(--paper); border:1px solid var(--line); border-radius:11px; overflow:hidden}
+.ms.sel{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-w)}
+.ms.play{border-color:var(--warm)}
+.ms svg{display:block; width:100%; height:auto; touch-action:manipulation}
+.mbar{display:flex; gap:7px; padding:8px 1px 0; overflow-x:auto; scrollbar-width:none}
+.mbar::-webkit-scrollbar{display:none}
+.mbar button{flex:0 0 auto}
+
+/* ── 하단 ── */
+footer{position:fixed; bottom:0; left:0; right:0; z-index:45; background:var(--bar);
+  backdrop-filter:blur(12px); border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)}
+
+.crumb{display:flex; align-items:center; gap:8px; padding:7px 12px;
+  border-bottom:1px solid var(--line); overflow:hidden}
+.pos{flex:0 0 auto; font-size:12.5px; font-weight:800; color:var(--accent); letter-spacing:-.01em}
+.pos.off{color:var(--dim)}
+/* 좌우로 슬라이드해서 넘기는 줄 (악기 · 박자) */
+.swipe{overflow-x:auto; scrollbar-width:none; scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 20px),transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 20px),transparent 100%)}
+.swipe::-webkit-scrollbar{display:none}
+.swipe>*{scroll-snap-align:center}
+/* 악기 칩 전용 줄 — 화면 폭을 다 쓴다 */
+.instrow{display:flex; align-items:center; padding:6px 12px;
+  border-bottom:1px solid var(--line); overflow:hidden}
+.chips{flex:1; min-width:0; display:flex; align-items:center; gap:6px}
+.chip{border:1px solid var(--line); background:var(--btn); border-radius:20px; min-height:40px;
+  padding:0 11px; font-size:12.5px; font-weight:700; color:var(--dim); white-space:nowrap;
+  display:inline-flex; align-items:center; flex:0 0 auto}
+.chip.a{background:var(--accent); border-color:var(--accent); color:#fff}
+.nav{flex:0 0 auto; display:flex; gap:6px}
+
+/* 틱별 편집 */
+.trow{display:flex; align-items:center; gap:8px; padding:7px 12px;
+  border-bottom:1px solid var(--line); overflow:hidden}
+.trow .tks{flex:1; min-width:0; display:flex; align-items:center; gap:7px;
+  overflow-x:auto; scrollbar-width:none}
+.trow .tks::-webkit-scrollbar{display:none}
+.trow .hint{font-size:12px; color:var(--dim); font-weight:600; white-space:nowrap}
+.tk{flex:0 0 auto; width:46px; min-height:46px; border:1.5px solid var(--line); background:var(--btn);
+  border-radius:10px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:2px; padding:0}
+.tk b{font-size:13.5px; font-weight:800; line-height:1}
+.tk i{font-size:10px; font-style:normal; line-height:1; height:11px; opacity:.9}
+.tk.s-e{border-style:dashed; color:var(--dim)}
+.tk.s-f{background:var(--accent-w); border-color:var(--accent); color:var(--accent)}
+.tk i{font-variant-numeric:tabular-nums}
+.brush{min-width:62px; font-weight:800}
+.brush.br-a{background:var(--warm); border-color:var(--warm); color:var(--onfill)}
+.brush.br-s{background:var(--spec); border-color:var(--spec); color:var(--onfill)}
+.brush.br-f{background:var(--accent); border-color:var(--accent); color:#fff}
+.tk.s-n{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.tk.s-a{background:var(--warm); border-color:var(--warm); color:var(--onfill)}
+.tk.s-x{background:var(--spec); border-color:var(--spec); color:var(--onfill)}
+.tk:active{transform:scale(.94)}
+
+.tabs{display:flex; align-items:flex-end; gap:7px; padding:7px 12px 0; overflow:hidden}
+.tabs .tw{flex:1; min-width:0; display:flex; gap:7px}
+.tab{border:1px solid var(--line); background:var(--btn); border-radius:10px 10px 0 0; border-bottom:none;
+  min-height:42px; padding:0 16px; font-size:13px; font-weight:700; color:var(--dim);
+  white-space:nowrap; flex:0 0 auto}
+.tab.a{background:var(--accent); border-color:var(--accent); color:#fff}
+.pals{padding:9px 12px 10px; border-top:1px solid var(--line); margin-top:-1px;
+  max-height:min(178px,24vh); overflow-y:auto; -webkit-overflow-scrolling:touch}
+footer.fold .instrow, footer.fold .trow, footer.fold .tabs, footer.fold .pals{display:none}
+.crumb .sp{flex:1}
+.pgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+.pat{background:var(--btn); border:1px solid var(--line); border-radius:10px; padding:3px}
+.pat{min-height:44px; display:flex; align-items:center; justify-content:center}
+.pat:active{background:var(--accent-w)}
+.pat.a{border-color:var(--accent); background:var(--accent-w); box-shadow:0 0 0 1px var(--accent)}
+.pat svg{width:100%; height:auto; display:block}
+.locked{opacity:.35; pointer-events:none}
+
+/* ── 시트 ── */
+.sheet{position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.4); display:none}
+.sheet.open{display:block}
+.sbox{position:absolute; left:0; right:0; bottom:0; max-height:82vh; overflow:auto;
+  background:var(--paper); border-radius:16px 16px 0 0; padding:16px 14px calc(26px + env(safe-area-inset-bottom))}
+.sbox h3{margin:0 0 12px; font-size:15px}
+.song{display:flex; align-items:center; gap:8px; padding:11px; border:1px solid var(--line);
+  border-radius:11px; margin-bottom:8px; background:var(--btn)}
+.song .m{flex:1; min-width:0}
+.song .m b{display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.song .m span{font-size:11px; color:var(--dim); line-height:1.4}
+.sbox input[type=text]{width:100%; min-height:44px; padding:0 12px; font-size:14px;
+  border:1px solid var(--line); border-radius:10px; background:var(--btn); color:var(--ink); margin-bottom:10px}
+.srow{display:flex; gap:7px; padding:0 0 12px; flex-wrap:wrap}
+textarea{width:100%; height:170px; background:var(--btn); color:var(--ink); border:1px solid var(--line);
+  border-radius:10px; padding:11px; font-family:ui-monospace,Menlo,monospace; font-size:11px; margin-bottom:10px}
+.key{display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:12.5px; align-items:center}
+
+/* ── 인쇄 / PDF ── */
+.phead,.pfoot{display:none}
+@page{ size:A4 portrait; margin:13mm 12mm }
+@media print{
+  /* 다크모드로 쓰더라도 인쇄물은 항상 흰 종이 + 검은 잉크 */
+  html,body{background:#fff !important; color:#000 !important; padding:0 !important; margin:0 !important}
+  .ms svg{color:#000 !important}
+  .slab .n, .slab .nm, .slab .rp{color:#333 !important}
+  header,footer,.sheet,.mbar,.slab button{display:none !important}
+  main{padding:0 !important}
+  .phead{display:block; margin:0 0 6mm; border-bottom:1.2pt solid #000; padding-bottom:2mm}
+  .phead b{font-size:15pt}
+  .phead span{font-size:9pt; color:#444; margin-left:8px}
+  .pfoot{display:block; margin-top:5mm; font-size:8pt; color:#444; line-height:1.5}
+  .section{margin:0 0 5mm !important; break-inside:avoid; page-break-inside:avoid}
+  .slab{font-size:7.5pt; padding:0 0 1mm}
+  .slab .n{font-size:7.5pt}
+  .sysgrid{grid-template-columns:repeat(4,1fr) !important; gap:0 !important}
+  .ms{background:#fff !important; border:none !important; border-radius:0 !important;
+    box-shadow:none !important; break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
