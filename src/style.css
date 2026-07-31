@@ -117,6 +117,8 @@ footer{position:fixed; bottom:0; left:0; right:0; z-index:45; background:var(--b
 .tk.s-a{background:var(--warm); border-color:var(--warm); color:var(--onfill)}
 .tk.s-x{background:var(--spec); border-color:var(--spec); color:var(--onfill)}
 .tk:active{transform:scale(.94)}
+/* 악기 모드에서 고른 틱 — 이 상태에서 악기 칩을 누르면 음표가 그 악기로 옮겨간다 */
+.tk.pick{box-shadow:0 0 0 3px var(--accent); border-color:var(--accent)}
 
 .tabs{display:flex; align-items:flex-end; gap:7px; padding:7px 12px 0; overflow:hidden}
 .tabs .tw{flex:1; min-width:0; display:flex; gap:7px}

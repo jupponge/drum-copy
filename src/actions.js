@@ -1,7 +1,7 @@
 /* 악보를 바꾸는 동작들. 전부 pushHist() 로 되돌리기 지점을 남긴다. */
 import { INSTS, IX } from './constants.js';
 import {
-  app, clone, newBar, ready, curBeat, reDiv,
+  app, clone, newBar, ready, curBeat, reDiv, instAt,
   pushHist, stepHist, secCount, secOf,
 } from './state.js';
 import { toast, inView, closeSheet } from './dom.js';
@@ -26,13 +26,10 @@ export function cycleTick(k){
   const B = app.song.bars[app.sel.bar].beats[app.sel.beat];
 
   if(app.brush === 'fill'){
-    /* 박 안의 모든 악기를 지금 고른 분할(fam)에 맞춘 뒤 찍는다 */
-    INSTS.forEach(i => { B[i.id] = reDiv(B[i.id], app.fam); });
-    const o = B[app.sel.inst];
-    const on = !o.s[k];
-    o.s[k] = on ? 'n' : '';
+    app.tick = k;                        // 이 틱을 고른 상태로 두면 악기 칩으로 옮길 수 있다
+    if(instAt(k) === app.sel.inst) clearTick(k);      // 같은 악기를 다시 → 빼기
+    else moveTickTo(k, app.sel.inst);
     pushHist();
-    if(on) tick(app.sel.inst, 'n', 0);
     render();
     return;
   }
@@ -47,8 +44,35 @@ export function cycleTick(k){
   render();
 }
 
+/* 박 안의 모든 악기를 지금 고른 분할(fam)에 맞춘다 */
+function alignBeat(B){
+  INSTS.forEach(i => { B[i.id] = reDiv(B[i.id], app.fam); });
+}
+
+/* 한 틱은 악기 하나만 가진다 — 그 자리의 음표를 instId 로 "옮긴다".
+   원래 있던 음표의 성격(악센트 등)은 가능하면 유지한다. */
+export function moveTickTo(k, instId){
+  const B = app.song.bars[app.sel.bar].beats[app.sel.beat];
+  alignBeat(B);
+  let type = '';
+  INSTS.forEach(i => {
+    if(B[i.id].s[k]){ type = type || B[i.id].s[k]; B[i.id].s[k] = ''; }
+  });
+  // 옮겨간 악기에 없는 특수주법이면 보통 음표로 (악센트는 모든 악기 공통)
+  const ok = type === 'n' || type === 'a' || type === IX[instId].sp;
+  B[instId].s[k] = ok && type ? type : 'n';
+  tick(instId, B[instId].s[k], 0);
+}
+
+export function clearTick(k){
+  const B = app.song.bars[app.sel.bar].beats[app.sel.beat];
+  alignBeat(B);
+  INSTS.forEach(i => { B[i.id].s[k] = ''; });
+}
+
 export function applyPat(bits){
   if(!ready()) return;
+  app.tick = null;
   app.song.bars[app.sel.bar].beats[app.sel.beat][app.sel.inst] =
     { d: app.fam, s: bits.split('').map(b => b === '1' ? 'n' : '') };
   pushHist();
@@ -59,6 +83,7 @@ export function applyPat(bits){
 }
 
 export function move(dir){
+  app.tick = null;                       // 박이 바뀌면 고른 틱은 풀린다
   if(app.sel.bar == null){ app.sel = { bar:0, beat:0, inst:app.sel.inst }; render(); return; }
   if(app.sel.beat == null){ app.sel.beat = dir > 0 ? 0 : 3; render(); return; }
   const idx = Math.max(0, Math.min(app.song.bars.length*4 - 1,

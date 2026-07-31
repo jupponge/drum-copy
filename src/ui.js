@@ -1,12 +1,12 @@
 /* 이벤트 연결 — 여기서만 DOM 이벤트를 받는다 */
 import { INSTS, IX } from './constants.js';
-import { app, ready, secOf, secCount } from './state.js';
+import { app, ready, secOf, secCount, pushHist } from './state.js';
 import { $, closeSheet, toast } from './dom.js';
 import { VB, metrics, yFor } from './notation.js';
 import { render, renderEditor } from './render.js';
 import { play } from './audio.js';
 import {
-  undo, redo, cycleTick, applyPat, move, eraseBeat, allBeats,
+  undo, redo, cycleTick, applyPat, move, eraseBeat, allBeats, moveTickTo,
   copyPrev, clearBar, secAction, addBars, delBars,
   insertSection, dupSection, deleteSection, canDeleteSection,
 } from './actions.js';
@@ -32,7 +32,7 @@ export function wire(){
     if(!ms) return;
     const bi = +ms.dataset.bar;
     /* 처음 탭은 마디만 선택. 두 번째 탭에서 박 + 오선 위치(악기)를 잡는다. */
-    if(app.sel.bar !== bi){ app.sel = { bar:bi, beat:null, inst:app.sel.inst }; render(); return; }
+    if(app.sel.bar !== bi){ app.sel = { bar:bi, beat:null, inst:app.sel.inst }; app.tick = null; render(); return; }
     const M = metrics(bi), r = ms.querySelector('svg').getBoundingClientRect();
     const vx = (ev.clientX - r.left) / r.width * VB.w;
     const vy = VB.y0 + (ev.clientY - r.top) / r.height * VB.h;
@@ -40,6 +40,7 @@ export function wire(){
     let best = INSTS[0], bd = 1e9;
     INSTS.forEach(i => { const d = Math.abs(vy - yFor(i.p)); if(d < bd){ bd = d; best = i; } });
     app.sel = { bar:bi, beat, inst:best.id };
+    app.tick = null;
     render();
   });
 
@@ -52,6 +53,11 @@ export function wire(){
       app.sel.inst = d.inst;
       if(app.sel.bar == null) app.sel.bar = 0;
       if(app.sel.beat == null) app.sel.beat = 0;
+      /* 악기 모드에서 틱을 골라둔 상태면, 칩을 누르는 순간 그 음표가 이 악기로 옮겨간다 */
+      if(app.brush === 'fill' && app.tick != null){
+        moveTickTo(app.tick, d.inst);
+        pushHist();
+      }
       render();
     }
     else if(d.fam){ app.fam = +d.fam; renderEditor(); }
@@ -62,6 +68,7 @@ export function wire(){
       const sp = IX[app.sel.inst].sp;
       const cyc = sp ? ['a','sp','fill'] : ['a','fill'];
       app.brush = cyc[(cyc.indexOf(app.brush) + 1) % cyc.length];
+      app.tick = null;
       renderEditor();
     }
     else if(d.act === 'undo') undo();

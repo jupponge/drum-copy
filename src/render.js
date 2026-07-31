@@ -66,7 +66,8 @@ export function renderEditor(){
     for(let k=0; k<app.fam; k++){
       const id = instAt(k);
       const st = !id ? 'e' : id === sel.inst ? 'n' : 'f';
-      tks += `<button class="tk s-${st}" data-tk="${k}"><b>${lbl[k]}</b><i>${id || ''}</i></button>`;
+      const pick = k === app.tick ? ' pick' : '';   // 고른 틱 — 칩을 누르면 여기로 옮겨간다
+      tks += `<button class="tk s-${st}${pick}" data-tk="${k}"><b>${lbl[k]}</b><i>${id || ''}</i></button>`;
     }
   } else {
     const o = curBeat();

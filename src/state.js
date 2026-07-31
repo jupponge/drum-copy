@@ -22,6 +22,7 @@ export const app = {
      'sp'   특수 토글            (오픈 ○ · 벨 ◆ · 고스트 ( ))
      'fill' 선택한 악기를 그 틱에 찍기 — 필인처럼 틱마다 악기가 바뀌는 경우 */
   brush: 'a',
+  tick: null,       // 악기 모드에서 지금 고른 틱 (여기에 악기 칩을 누르면 그 자리로 옮겨간다)
   autoAdv: true,
   loopOn:  false,
   metroOn: true,
@@ -50,12 +51,14 @@ export function reDiv(o, d){
   return { d, s };
 }
 
-/* 그 틱에 올라와 있는 악기 (오선 위에서부터 첫 번째) */
+/* 지금 분할(fam) 기준으로 k번째 틱에 올라와 있는 악기 (오선 위에서부터 첫 번째).
+   분할이 더 성긴 악기(8분 하이햇 등)도 자리가 맞으면 잡아낸다. */
 export function instAt(k){
   const B = app.song.bars[app.sel.bar].beats[app.sel.beat];
   for(const i of INSTS){
     const o = B[i.id];
-    if(o.d === app.fam && o.s[k]) return i.id;
+    const src = k * o.d / app.fam;
+    if(Number.isInteger(src) && o.s[src]) return i.id;
   }
   return null;
 }
