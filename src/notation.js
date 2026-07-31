@@ -2,6 +2,7 @@
    색은 전부 currentColor 로 그리고 CSS 토큰(.ms svg{color:var(--ink)})에서 받는다. */
 import { INSTS, IX, UPPER, LOWER, LEDGER } from './constants.js';
 import { app, lcm, secOf, secIdxOfBar } from './state.js';
+import { esc } from './dom.js';
 
 /* 조판 기하 — 오선 한 칸 S=10, 음표머리 = 0.88칸 */
 export const VB = { w:248, h:138, y0:5 };
@@ -45,14 +46,19 @@ export function head(x, y, kind, type){
 export const accentMark = (x, y) =>
   `<path d="M${x-4.2},${y-4.8}L${x+4.2},${y-2}L${x-4.2},${y+0.8}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`;
 
+/* 표준 쉼표 모양.
+   4분쉼표 = 지그재그 + 아래쪽 갈고리, 8분·16분 = 기운 대에 동그란 깃발 */
 export function rest(x, y, kind){
-  if(kind === 'q')
-    return `<path d="M${x-2.1},${y-7.4}L${x+2.1},${y-2.4}L${x-2.1},${y+2}L${x+2.5},${y+6.6}" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>`;
-  const top = kind === 's' ? y-6.8 : y-5.5;
-  let g = `<path d="M${x+2.5},${top}L${x-1.7},${y+6.7}" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`;
-  g += `<path d="M${x+2.5},${top} q -4.2,0.4 -4.7,3.5 q 2.5,-2.2 4.7,-1.3z" fill="currentColor"/>`;
+  if(kind === 'q'){
+    let g = `<path d="M${x-2.3},${y-7.8}L${x+2.3},${y-2.6}L${x-1.9},${y+1.4}L${x+2.7},${y+6.2}" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>`;
+    g += `<path d="M${x+2.7},${y+6.2} c -2.5,-2.1 -5.7,-0.5 -5.0,2.0 c 0.4,1.5 1.8,2.3 3.0,2.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`;
+    return g;
+  }
+  const top = kind === 's' ? y-7.2 : y-5.6;
+  let g = `<path d="M${x+2.6},${top}L${x-2.0},${y+6.6}" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>`;
+  g += `<path d="M${x+2.6},${top} c -2.6,-0.2 -4.6,1.3 -4.9,3.6 c 1.4,-1.9 3.2,-2.2 4.9,-1.5z" fill="currentColor"/>`;
   if(kind === 's')
-    g += `<path d="M${x+1},${top+5} q -4.2,0.4 -4.7,3.5 q 2.5,-2.2 4.7,-1.3z" fill="currentColor"/>`;
+    g += `<path d="M${x+0.9},${top+5.4} c -2.6,-0.2 -4.6,1.3 -4.9,3.6 c 1.4,-1.9 3.2,-2.2 4.9,-1.5z" fill="currentColor"/>`;
   return g;
 }
 
@@ -102,20 +108,42 @@ export function drawVoice(xf, ev, L, dir, beamY){
     if(isDotted(durs[i], L))
       g += `<circle cx="${x+7.5}" cy="${dir>0 ? Math.min(...ys) : Math.max(...ys)}" r="1.3" fill="currentColor"/>`;
   });
-  const bh = 2.7, gap = dir > 0 ? 4.5 : -4.5;
+  /* 박 맨 앞의 쉼표가 격자 한 칸짜리면(16분 그룹의 16분쉼표 등) 빔을 그 자리까지 늘린다.
+     예: 16분쉼표 + 16분음표 3개 → 빔이 쉼표 위까지 이어진다 (표준 조판) */
+  const extend = ev.length >= 2 && ev[0].slot === 1 && nb[0] >= 1;
+
+  const bh = 2.7, gap = dir > 0 ? 4.5 : -4.5, off = dir > 0 ? 4 : -4;
+
+  /* 이웃과 빔으로 이어지지 않는 음표 → 빔 조각이 아니라 꼬리(flag)를 단다 */
+  const lone = ev.map((e,i) => nb[i] >= 1
+    && !(i > 0 && nb[i-1] >= 1)
+    && !(i < ev.length-1 && nb[i+1] >= 1)
+    && !(i === 0 && extend));
+
+  ev.forEach((e,i) => {
+    if(!lone[i]) return;
+    const x = xf(e.slot) + off;
+    for(let f=0; f<nb[i]; f++){
+      const fy = beamY + f * (dir > 0 ? 5.2 : -5.2);
+      g += dir > 0
+        ? `<path d="M${x},${fy} c 4.6,2.2 6.2,5.6 3.4,9.6 c 1.1,-3.7 -0.5,-5.8 -3.4,-7.2z" fill="currentColor"/>`
+        : `<path d="M${x},${fy} c 4.6,-2.2 6.2,-5.6 3.4,-9.6 c 1.1,3.7 -0.5,5.8 -3.4,7.2z" fill="currentColor"/>`;
+    }
+  });
+
   for(let lvl=1; lvl<=3; lvl++){
     let i = 0;
     while(i < ev.length){
-      if(nb[i] < lvl){ i++; continue; }
+      if(nb[i] < lvl || lone[i]){ i++; continue; }
       let j = i;
-      while(j+1 < ev.length && nb[j+1] >= lvl) j++;
-      const xa = xf(ev[i].slot) + (dir>0 ? 4 : -4);
-      const xb = xf(ev[j].slot) + (dir>0 ? 4 : -4);
+      while(j+1 < ev.length && nb[j+1] >= lvl && !lone[j+1]) j++;
+      const xa = (i === 0 && extend && nb[0] >= lvl ? xf(0) : xf(ev[i].slot)) + off;
+      const xb = xf(ev[j].slot) + off;
       const y  = beamY + (lvl-1)*gap - (dir>0 ? bh : 0);
-      if(j > i)
+      if(Math.abs(xb - xa) > 0.01)
         g += `<rect x="${Math.min(xa,xb)}" y="${y}" width="${Math.abs(xb-xa)}" height="${bh}" fill="currentColor"/>`;
       else {
-        const d = (i > 0 && nb[i-1] >= 1 && lvl > 1) ? -1 : 1;   // 부분빔은 박 안쪽을 향하게
+        const d = (i > 0 && nb[i-1] >= 1) ? -1 : 1;   // 부분빔은 박 안쪽을 향하게
         g += `<rect x="${d>0 ? xa : xa-6.5}" y="${y}" width="6.5" height="${bh}" fill="currentColor"/>`;
       }
       i = j + 1;
@@ -212,6 +240,87 @@ export function measureSVG(bi){
   }
 
   return `<svg viewBox="0 ${VB.y0} ${VB.w} ${VB.h}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+/* ══════════════════════════════════════════
+   인쇄용 — 4마디를 한 줄(시스템)로 이어 그린다.
+   클레프·박자표는 줄 맨 앞에 한 번만, 마디는 마디선으로만 나눈다.
+   ══════════════════════════════════════════ */
+export const SYSVB = { w:1000, h:168, y0:-22 };
+
+export function systemSVG(s){
+  const sc = secOf(s), rep = 1 + (sc.rep || 0), first = s*4;
+  const END = SYSVB.w - 8;
+
+  let cx = 20.5;                       // 드럼 클레프 다음
+  const ts = (first === 0);
+  let tsX = 0, srX = 0;
+  if(ts){ tsX = cx + 5.5; cx += 15; }
+  if(rep > 1){ srX = cx; cx += 15; }
+  const X0 = cx + 5;
+  const musicRight = rep > 1 ? END - 15 : END - 3;
+  const mW = (musicRight - X0) / 4;
+
+  let g = '';
+  for(let l=0; l<5; l++){
+    const y = TOP + l*S;
+    g += `<path d="M8,${y}L${END},${y}" stroke="currentColor" stroke-width=".9"/>`;
+  }
+  g += `<rect x="8" y="${TOP}" width="1.5" height="${BOT-TOP}" fill="currentColor"/>`;
+  g += `<rect x="12" y="${TOP+3.5}" width="2.8" height="${BOT-TOP-7}" fill="currentColor"/><rect x="16.5" y="${TOP+3.5}" width="2.8" height="${BOT-TOP-7}" fill="currentColor"/>`;
+  if(ts)
+    g += `<text x="${tsX}" y="${TOP+18}" font-size="15" font-weight="800" fill="currentColor" text-anchor="middle">4</text><text x="${tsX}" y="${TOP+37}" font-size="15" font-weight="800" fill="currentColor" text-anchor="middle">4</text>`;
+  if(rep > 1){                                       // 시작 도돌이표
+    g += `<rect x="${srX}" y="${TOP}" width="2.8" height="${BOT-TOP}" fill="currentColor"/>`;
+    g += `<rect x="${srX+4.3}" y="${TOP}" width="1.2" height="${BOT-TOP}" fill="currentColor"/>`;
+    g += `<circle cx="${srX+9}" cy="${yFor(5)}" r="1.6" fill="currentColor"/><circle cx="${srX+9}" cy="${yFor(3)}" r="1.6" fill="currentColor"/>`;
+  }
+
+  /* 섹션 이름 = 리허설 마크 (네모 안에). 악보 위쪽 여백에 둔다 */
+  if(sc.name){
+    const w = Math.max(22, sc.name.length * 13 + 12);
+    g += `<rect x="8" y="-20" width="${w}" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.1"/>`;
+    g += `<text x="${8 + w/2}" y="-7.5" font-size="12" font-weight="800" fill="currentColor" text-anchor="middle">${esc(sc.name)}</text>`;
+  }
+
+  for(let m=0; m<4; m++){
+    const bi = first + m, mX = X0 + m*mW, MW = mW - PAD;
+    const bar = app.song.bars[bi];
+    g += `<text x="${mX+1}" y="${TOP-7}" font-size="9" font-weight="700" fill="currentColor" opacity=".45">${bi+1}</text>`;
+    for(let e=0; e<4; e++){
+      const { L, up, low } = layoutBeat(bar.beats[e]);
+      const xf = slot => mX + PAD + ((e + slot/L)/4) * MW;
+      const cxb = mX + PAD + ((e+0.5)/4) * MW;
+      let upY = 24, loY = 118;
+      if(up.length){
+        const mn = Math.min(...up.flatMap(v => v.notes.map(n => yFor(IX[n.id].p))));
+        upY = Math.min(Math.max(mn - 22, 20), 40);
+      }
+      if(low.length){
+        const mx = Math.max(...low.flatMap(v => v.notes.map(n => yFor(IX[n.id].p))));
+        loY = Math.min(Math.max(mx + 22, 114), 128);
+      }
+      g += restsBefore(xf, up, L, yFor(4), cxb);
+      g += drawVoice(xf, up,  L, +1, upY);
+      g += drawVoice(xf, low, L, -1, loY);
+      if((L === 3 || L === 6) && (up.length || low.length))
+        g += `<text x="${cxb}" y="${upY-3.5}" font-size="8.5" font-style="italic" font-weight="700" fill="currentColor" text-anchor="middle">${L}</text>`;
+    }
+    if(m < 3)   // 마디 사이는 가는 마디선
+      g += `<rect x="${X0 + (m+1)*mW - 0.7}" y="${TOP}" width="1.3" height="${BOT-TOP}" fill="currentColor"/>`;
+  }
+
+  if(rep > 1){                                       // 끝 도돌이표 + ×N
+    g += `<circle cx="${END-11}" cy="${yFor(5)}" r="1.6" fill="currentColor"/><circle cx="${END-11}" cy="${yFor(3)}" r="1.6" fill="currentColor"/>`;
+    g += `<rect x="${END-6.5}" y="${TOP}" width="1.2" height="${BOT-TOP}" fill="currentColor"/>`;
+    g += `<rect x="${END-2.8}" y="${TOP}" width="2.8" height="${BOT-TOP}" fill="currentColor"/>`;
+    g += `<text x="${END}" y="${TOP-7}" font-size="10" font-weight="800" fill="currentColor" text-anchor="end">×${rep}</text>`;
+  } else {
+    g += `<rect x="${END-4.5}" y="${TOP}" width="1.1" height="${BOT-TOP}" fill="currentColor"/>`;
+    g += `<rect x="${END-2.8}" y="${TOP}" width="2.8" height="${BOT-TOP}" fill="currentColor"/>`;
+  }
+
+  return `<svg viewBox="0 ${SYSVB.y0} ${SYSVB.w} ${SYSVB.h}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
 }
 
 /* 안내 시트용 — 악기 하나의 오선 위치 */

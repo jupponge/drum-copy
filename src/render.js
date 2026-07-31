@@ -2,19 +2,29 @@
 import { IX, CHIPORDER, SHORT, SYM, TICKLBL, FAMS } from './constants.js';
 import { app, secCount, secOf, ready, curBeat, instAt, canUndo } from './state.js';
 import { $, esc } from './dom.js';
-import { measureSVG } from './notation.js';
+import { measureSVG, systemSVG } from './notation.js';
 import { patSVG } from './palette.js';
 
 export function render(){
   $('title').value = app.song.title;
   $('bpm').value   = app.song.bpm;
 
+  /* 인쇄용 : 4마디를 한 줄로 이어 그린다 (클레프는 줄 앞에 한 번) */
+  if(app.printing){
+    let ph = '';
+    for(let s=0; s<secCount(); s++) ph += `<div class="section sys">${systemSVG(s)}</div>`;
+    $('score').innerHTML = ph;
+    return;
+  }
+
   let html = '';
   for(let s=0; s<secCount(); s++){
     const sc = secOf(s), rep = 1 + (sc.rep || 0);
     html += `<div class="section"><div class="slab">`
       + `<span class="n">${s*4+1}–${s*4+4}마디</span>`
-      + (sc.name ? `<span class="nm">${esc(sc.name)}</span>` : '')
+      + (sc.name
+          ? `<button class="nm" data-secmenu="${s}">${esc(sc.name)}</button>`
+          : `<button class="addnm" data-secmenu="${s}">＋ 벌스·코러스</button>`)
       + (rep > 1 ? `<span class="rp">×${rep}</span>` : '')
       + `<span class="sp"></span><button class="btn sm" data-secplay="${s}">▶ 구간</button>`
       + `<button class="btn sm ic" data-secmenu="${s}">⋯</button></div><div class="sysgrid">`;

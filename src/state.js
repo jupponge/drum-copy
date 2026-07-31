@@ -23,6 +23,7 @@ export const app = {
      'fill' 선택한 악기를 그 틱에 찍기 — 필인처럼 틱마다 악기가 바뀌는 경우 */
   brush: 'a',
   tick: null,       // 악기 모드에서 지금 고른 틱 (여기에 악기 칩을 누르면 그 자리로 옮겨간다)
+  printing: false,  // 인쇄용 렌더(4마디 한 줄) 중인지
   autoAdv: true,
   loopOn:  false,
   metroOn: true,

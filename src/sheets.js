@@ -174,14 +174,29 @@ export function printPDF(){
   const keep = clone(app.sel);
   stop();
   app.sel = { bar:null, beat:null, inst:app.sel.inst };
+  app.printing = true;
   render();
+
+  /* 송폼 요약 — 이름 붙인 섹션들을 순서대로 */
+  const form = [];
+  for(let s=0; s<secCount(); s++){
+    const sc = secOf(s), rep = 1 + (sc.rep || 0);
+    if(sc.name) form.push(esc(sc.name) + (rep > 1 ? ' ×' + rep : ''));
+  }
   $('phead').innerHTML =
-    `<b>${esc(app.song.title || '무제')}</b><span>♩= ${app.song.bpm} · 4/4 · ${app.song.bars.length}마디</span>`;
+    `<b>${esc(app.song.title || '무제')}</b><span>♩= ${app.song.bpm} · 4/4 · ${app.song.bars.length}마디</span>`
+    + (form.length ? `<div class="form">${form.join('　→　')}</div>` : '');
   $('pfoot').textContent =
     '오선 위→아래 : 크래쉬(덧줄 ✕) · 하이햇(✕) · 라이드(✕) · 탐탐 · 스네어 · 플로어탐 · 베이스 · 하이햇페달(덧줄 ✕)   |   '
     + '손 = 기둥 위, 발 = 기둥 아래 · 하이햇 오픈 ○ · 스네어 고스트 ( ) · 라이드 벨 ◆ · 악센트 >';
   let done = false;
-  const restore = () => { if(done) return; done = true; app.sel = keep; render(); };
+  const restore = () => {
+    if(done) return;
+    done = true;
+    app.printing = false;
+    app.sel = keep;
+    render();
+  };
   window.addEventListener('afterprint', restore, { once:true });
   setTimeout(() => { window.print(); setTimeout(restore, 1500); }, 80);
 }
