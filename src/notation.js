@@ -3,6 +3,7 @@
 import { INSTS, IX, UPPER, LOWER, LEDGER } from './constants.js';
 import { app, lcm, secOf, secIdxOfBar } from './state.js';
 import { esc } from './dom.js';
+import { glyph, REST_S, FLAG_S } from './glyphs.js';
 
 /* 조판 기하 — 오선 한 칸 S=10, 음표머리 = 0.88칸 */
 export const VB = { w:248, h:138, y0:5 };
@@ -46,20 +47,10 @@ export function head(x, y, kind, type){
 export const accentMark = (x, y) =>
   `<path d="M${x-4.2},${y-4.8}L${x+4.2},${y-2}L${x-4.2},${y+0.8}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`;
 
-/* 표준 쉼표 모양.
-   4분쉼표 = 지그재그 + 아래쪽 갈고리, 8분·16분 = 기운 대에 동그란 깃발 */
+/* 쉼표 — SMuFL 표준(Bravura) 글리프. 원점은 가운데 줄 */
 export function rest(x, y, kind){
-  if(kind === 'q'){
-    let g = `<path d="M${x-2.3},${y-7.8}L${x+2.3},${y-2.6}L${x-1.9},${y+1.4}L${x+2.7},${y+6.2}" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>`;
-    g += `<path d="M${x+2.7},${y+6.2} c -2.5,-2.1 -5.7,-0.5 -5.0,2.0 c 0.4,1.5 1.8,2.3 3.0,2.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`;
-    return g;
-  }
-  const top = kind === 's' ? y-7.2 : y-5.6;
-  let g = `<path d="M${x+2.6},${top}L${x-2.0},${y+6.6}" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>`;
-  g += `<path d="M${x+2.6},${top} c -2.6,-0.2 -4.6,1.3 -4.9,3.6 c 1.4,-1.9 3.2,-2.2 4.9,-1.5z" fill="currentColor"/>`;
-  if(kind === 's')
-    g += `<path d="M${x+0.9},${top+5.4} c -2.6,-0.2 -4.6,1.3 -4.9,3.6 c 1.4,-1.9 3.2,-2.2 4.9,-1.5z" fill="currentColor"/>`;
-  return g;
+  const name = kind === 'q' ? 'restQuarter' : kind === 's' ? 'rest16th' : 'rest8th';
+  return glyph(name, x, y, REST_S, true);
 }
 
 export function beamsFor(dur, L){
@@ -129,12 +120,9 @@ export function drawVoice(xf, ev, L, dir, beamY){
   ev.forEach((e,i) => {
     if(!lone[i]) return;
     const x = xf(e.slot) + off;
-    for(let f=0; f<nb[i]; f++){
-      const fy = beamY + f * (dir > 0 ? 5.2 : -5.2);
-      g += dir > 0
-        ? `<path d="M${x},${fy} c 4.6,2.2 6.2,5.6 3.4,9.6 c 1.1,-3.7 -0.5,-5.8 -3.4,-7.2z" fill="currentColor"/>`
-        : `<path d="M${x},${fy} c 4.6,-2.2 6.2,-5.6 3.4,-9.6 c 1.1,3.7 -0.5,5.8 -3.4,7.2z" fill="currentColor"/>`;
-    }
+    /* 16분 이상은 꼬리가 두 겹인 전용 글리프가 따로 있다 */
+    const name = (nb[i] >= 2 ? 'flag16th' : 'flag8th') + (dir > 0 ? 'Up' : 'Down');
+    g += glyph(name, x, beamY, FLAG_S, false);
   });
 
   for(let lvl=1; lvl<=3; lvl++){

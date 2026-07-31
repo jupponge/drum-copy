@@ -77,6 +77,19 @@ src/
 
 악보 SVG 는 색을 하드코딩하지 않고 전부 `currentColor` 로 그린 뒤 `.ms svg{color:var(--ink)}` 에서 받습니다. 그래서 테마를 바꿔도 악보가 같이 따라오고, 인쇄할 때만 검정으로 고정됩니다.
 
+### 기호
+
+쉼표와 꼬리(flag)는 **SMuFL 표준 폰트 Bravura** 의 실제 글리프 윤곽선을 씁니다(`src/glyphs.js`). 폰트 파일은 싣지 않고 필요한 7개 모양만 path 로 박아넣었기 때문에, 로딩 실패나 용량 부담 없이 표준 모양이 나옵니다. 다시 뽑으려면:
+
+```bash
+npm i -D vexflow opentype.js wawoff2
+node tools/extract-glyphs.mjs
+```
+
+> Bravura © Steinberg Media Technologies GmbH — [SIL Open Font License 1.1](https://github.com/steinbergmedia/bravura)
+
+음표머리·기둥·빔·덧줄은 단순 도형이라 직접 그립니다. 우리 음표머리(폭 8.8)가 Bravura 표준(11.8)의 약 75% 크기라, 글리프도 같은 비율(`REST_S` `FLAG_S`)로 줄여 맞췄습니다.
+
 ## 데이터 모델
 
 ```js
