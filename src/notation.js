@@ -70,6 +70,12 @@ export function beamsFor(dur, L){
 }
 export const isDotted = (dur, L) => { const f = dur/L; return f === 0.75 || f === 0.375; };
 
+/* 박 맨 앞 쉼표 위로 빔이 지나가는가 (격자 한 칸짜리 쉼표 + 빔 있는 음표) */
+export function beamCoversLeadRest(ev, L){
+  if(ev.length < 2 || ev[0].slot !== 1) return false;
+  return beamsFor(ev[1].slot - ev[0].slot, L) >= 1;
+}
+
 /* 한 박을 그리기 위한 정리 — 악기별 분할의 최소공배수 격자로 합친다 */
 export function layoutBeat(beat){
   let L = 1;
@@ -110,7 +116,7 @@ export function drawVoice(xf, ev, L, dir, beamY){
   });
   /* 박 맨 앞의 쉼표가 격자 한 칸짜리면(16분 그룹의 16분쉼표 등) 빔을 그 자리까지 늘린다.
      예: 16분쉼표 + 16분음표 3개 → 빔이 쉼표 위까지 이어진다 (표준 조판) */
-  const extend = ev.length >= 2 && ev[0].slot === 1 && nb[0] >= 1;
+  const extend = beamCoversLeadRest(ev, L);
 
   const bh = 2.7, gap = dir > 0 ? 4.5 : -4.5, off = dir > 0 ? 4 : -4;
 
@@ -221,14 +227,15 @@ export function measureSVG(bi){
       const mx = Math.max(...low.flatMap(v => v.notes.map(n => yFor(IX[n.id].p))));
       loY = Math.min(Math.max(mx + 22, 114), 128);
     }
-    g += restsBefore(xf, up, L, yFor(4), cx);
+    /* 빔이 쉼표 위를 지나가면 쉼표를 음표 그룹 쪽으로 올려 한 덩어리로 읽히게 한다 */
+    g += restsBefore(xf, up, L, beamCoversLeadRest(up, L) ? yFor(6) : yFor(4), cx);
     g += drawVoice(xf, up,  L, +1, upY);
     g += drawVoice(xf, low, L, -1, loY);
     if((L === 3 || L === 6) && (up.length || low.length))
       g += `<text x="${cx}" y="${upY-3.5}" font-size="8.5" font-style="italic" font-weight="700" fill="currentColor" text-anchor="middle">${L}</text>`;
   }
 
-  if(M.er){                                              // 끝 도돌이표
+  if(M.er){                                             // 끝 도돌이표
     g += `<circle cx="${BAR-10}" cy="${yFor(5)}" r="1.6" fill="currentColor"/><circle cx="${BAR-10}" cy="${yFor(3)}" r="1.6" fill="currentColor"/>`;
     g += `<rect x="${BAR-6}" y="${TOP}" width="1.2" height="${BOT-TOP}" fill="currentColor"/>`;
     g += `<rect x="${BAR-2.8}" y="${TOP}" width="2.8" height="${BOT-TOP}" fill="currentColor"/>`;
@@ -300,7 +307,7 @@ export function systemSVG(s){
         const mx = Math.max(...low.flatMap(v => v.notes.map(n => yFor(IX[n.id].p))));
         loY = Math.min(Math.max(mx + 22, 114), 128);
       }
-      g += restsBefore(xf, up, L, yFor(4), cxb);
+      g += restsBefore(xf, up, L, beamCoversLeadRest(up, L) ? yFor(6) : yFor(4), cxb);
       g += drawVoice(xf, up,  L, +1, upY);
       g += drawVoice(xf, low, L, -1, loY);
       if((L === 3 || L === 6) && (up.length || low.length))
